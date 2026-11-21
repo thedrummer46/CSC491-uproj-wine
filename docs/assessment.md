@@ -18,9 +18,9 @@
 | 2 | guess | 3, 4 | Mean absolute error of predicted `Quality` on test batches | lower | Direct; in the panel's own units (score points) |
 | 3 | certify | 5, 6 | Pairwise accuracy: on 500 random test pairs, how often "A beats B" is right, counting only pairs it calls a real difference | higher | Ask 5 is a pairwise claim; ask 6 is reported alongside it |
 | 4 | flow | 7, 8 | Feed train batches one at a time; after every 100, take MAE on test. Score = mean MAE over the curve | lower | Rewards learning fast, not just ending well |
-| 5 | blame | 9, 10 | Refit a plain predictor on only the 3 readings it blames; MAE on test | lower | Blame with no ground truth: good blame should keep most of the predictive power |
-| 6 | justify | 11, 12 | Fidelity: % of test batches where the stated reason gives the same verdict (good/poor) as the model | higher | An explanation that disagrees with its own model is wrong |
-| 7 | choose | 13, 14 | Label at most 20 train batches, pick one. Score = `wins` of the pick | higher | The ezr "few labels" story, scored with ezr's own measure |
+| 5 | choose | 13, 14 | Label at most 20 train batches, pick one. Score = `wins` of the pick | higher | The ezr "few labels" story, scored with ezr's own measure |
+| 6 | blame | 9, 10 | Refit a plain predictor on only the 3 readings it blames; MAE on test | lower | Blame with no ground truth: good blame should keep most of the predictive power |
+| 7 | justify | 11, 12 | Fidelity: % of test batches where the stated reason gives the same verdict (good/poor) as the model | higher | An explanation that disagrees with its own model is wrong |
 | 8 | fix | 15, 16 | For the worst test batches, apply the suggested change. Score = gain in true `Quality` of the nearest real batch to the changed one | higher | No lab to run the change; the nearest real batch stands in for it |
 | 9 | spot | 17, 18 | Corrupt 5% of test batches (×10 or −1 on one reading, swapped columns). F1 of flagging them | higher | Planted anomalies give known answers |
 | 10 | race | 19, 20 | Does its verdict ("better than random / than off-the-shelf") match the harness's own `same` verdict? % correct over splits | higher | Race *is* a stats claim; check it against the lecturer's stats |

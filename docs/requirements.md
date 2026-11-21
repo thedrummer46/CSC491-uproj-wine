@@ -38,6 +38,6 @@ Each ask is written in the winemaker's words and tagged with the skill it demos.
 
 The asks become steps in this order, so each step can reuse the ones before it:
 
-remember → guess → certify → flow → blame → justify → choose → fix → spot → race
+remember → guess → certify → flow → choose → blame → justify → fix → spot → race
 
 Each step is tagged `step1`, `step2`, and so on. Within a step, both asks for that skill are demoed.
