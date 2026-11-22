@@ -1,0 +1,18 @@
+{
+  "_note": "One entry per step. 'asks' come from docs/requirements.md. 'api' is the function(s) the step must define so the scorer can call it. AGREE THESE WITH T7 BEFORE RUNNING.",
+  "1": {"skill": "remember",
+        "asks": ["Out of all our past batches, show me the handful that were truly exceptional.",
+                 "Give me a quick picture of a normal batch from our cellar: what each lab reading usually looks like."],
+        "api": ["remember(rows) -> list of rows: the exceptional batches, at most 5% of the data rows",
+                "summary(rows) -> dict mapping each column name to its typical value"]},
+  "2": {"skill": "guess",
+        "asks": ["Before the panel sits, estimate what score this new batch will get from its lab sheet alone.",
+                 "Group our batches into a few kinds, and tell me what score to expect from each kind."],
+        "api": ["guess(train, row) -> float: predicted Quality+ for one batch, using only the train rows",
+                "kinds(train) -> list of (group_rows, expected_quality) pairs"]},
+  "3": {"skill": "certify",
+        "asks": ["When you say batch A will beat batch B, tell me whether that's a real difference or just tasting noise.",
+                 "How often are your score estimates right on batches you've never seen before?"],
+        "api": ["certify(train, a, b) -> 'A', 'B' or 'same': which batch will score better, or 'same' if the difference is just noise",
+                "accuracy(train, test) -> float: share of test batches whose guessed score rounds to the true Quality+"]}
+}
