@@ -122,7 +122,28 @@ def step3(m, train, test, pairs=500):
             f"called {called}/{pairs}; accuracy {acc:.2f}" + ("" if ok else " WRONG"))
 
 
-SCORERS = {1: step1, 2: step2, 3: step3}
+def step4(m, train, test, every=100):
+    """Feed train batches to learn() one at a time; after every EVERY,
+    take predict()'s mean absolute error on the test batches (Quality+
+    hidden). Score = mean error over that learning curve (lower is better),
+    so learning fast counts, not just ending well. Note gives the first
+    and last points of the curve, and checks worth() agrees with
+    'predicted Quality+ of 6 or more' on the final model."""
+    names, at = test[0], test[0].index("Quality+")
+    blinds = [blind(names, r) for r in test[1:]]
+    model, curve = m.start(names), []
+    for i, row in enumerate(train[1:], 1):
+        model = m.learn(model, row)
+        if i % every == 0:
+            curve.append(sum(abs(float(m.predict(model, b)) - r[at])
+                             for b, r in zip(blinds, test[1:])) / len(blinds))
+    ok = all(bool(m.worth(model, b)) == (float(m.predict(model, b)) >= 6)
+             for b in blinds[:50])
+    return (sum(curve) / len(curve),
+            f"curve {curve[0]:.2f} -> {curve[-1]:.2f}" + ("" if ok else "; worth WRONG"))
+
+
+SCORERS = {1: step1, 2: step2, 3: step3, 4: step4}
 
 
 #-- main -----------------------------------------------------

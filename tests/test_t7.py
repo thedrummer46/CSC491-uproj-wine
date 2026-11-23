@@ -91,6 +91,40 @@ def test_accuracy_is_a_share_better_than_always_6():
     assert always6 < m.accuracy(train, test) <= 1
 
 
+#-- step 4: flow ----------------------------------------------
+def test_flow_learns_in_place_and_starts_fresh():
+    m = step(4)
+    train = score.splits()[0][0]
+    model = m.start(train[0])
+    for r in train[1:51]:
+        assert m.learn(model, r) is model     # updated, not rebuilt
+    assert len(m.start(train[0]).rows) == 0   # a new start is empty
+
+
+def test_flow_gets_better_with_more_batches():
+    m = step(4)
+    train, test = score.splits()[0]
+    names, at = test[0], test[0].index("Quality+")
+    rows = test[1:101]
+    def err(model):
+        return sum(abs(m.predict(model, score.blind(names, r)) - r[at]) for r in rows)
+    model = m.start(names)
+    for r in train[1:101]: m.learn(model, r)
+    early = err(model)
+    for r in train[101:]: m.learn(model, r)
+    assert err(model) < early
+
+
+def test_worth_means_predicted_6_or_more():
+    m = step(4)
+    train, test = score.splits()[0]
+    model = m.start(train[0])
+    for r in train[1:]: m.learn(model, r)
+    for r in test[1:31]:
+        b = score.blind(test[0], r)
+        assert m.worth(model, b) == (m.predict(model, b) >= 6)
+
+
 def test_step1_scores_on_every_split():
     m = step(1)
     for train, test in score.splits():
