@@ -55,6 +55,8 @@ def prompt(t, step, repeat, spec):
     p += [f"- \"{a}\"\n" for a in spec["asks"]]
     p.append("It must define:\n")
     p += [f"- {a}\n" for a in spec["api"]]
+    p.append(f"Workload: {spec['calls']} Everything for one train/test split "
+             "must finish within 90 seconds on an ordinary laptop; slower code fails.\n")
     p.append("Do not use any tools or write any files. Reply with ONLY the contents "
              "of step%d.py as plain text: no explanation, no markdown fences.\n" % step)
     return "".join(p)

@@ -46,6 +46,7 @@ Each entry says where it belongs in the report: **[Methods]**, **[Results]**, **
 
   T2/T4/T6 also get "Reuse the library and the earlier steps wherever you can" from step 2 on.
 - **[Methods] Limit:** the saved replies (`results/raw/`) don't include the prompt sent. Prompts can only be rebuilt from `scripts/run_trial.py` as committed.
+- **[Methods] Workload and speed requirement (added Nov 23).** Each step in skills.json now states the scorer's workload (`calls`). The prompt says everything for one split must finish within **90 seconds** on an ordinary laptop. It states the workload and the limit, not *how* to meet them: no hint to cache. The scorer runs each (treatment, repeat, split) in its own process and stops it at 90 s, recording it blank as "too slow". Why: T1's and T6's repeat 1 rebuilt their models on every call (up to 28 min per split), which nothing in the original interface ruled out. T7's slowest step uses 38 s. Repeat 1 of T1, T2, T5 and T6 was run under the old prompt; it's kept in git history (commit "T1 and T2 repeat 1, steps 1-6 (before workload requirement)", and `a06232e` for T5/T6), then deleted and re-run under the new prompt so every repeat sees the same interface. The old runs' costs stay in `cost.csv`.
 - **[Methods] Never re-run or edit an existing step.** The runner overwrites without asking, and later steps were built on the original.
 
 ## Facts about the code (repeat 1)

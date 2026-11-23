@@ -1,14 +1,15 @@
 """Score every treatment's stepN.py on the one test suite (data/splits.json).
 
     python -m harness.score 1        # score step 1 for every treatment found
+    python -m harness.score 3 600    # same, with a 600 s limit instead of 90
 
 Per docs/assessment.md: LLM repeat r (treatments/tK/rNN/) is scored on split r;
 T7 (treatments/t7/) is written once and scored on all 5 splits. A step that
-crashes or breaks the interface scores blank and keeps its error message --
-broken stays broken. Writes results/scores/stepN.csv and prints it.
+crashes, breaks the interface, or takes over 90 s on one split scores blank
+and keeps its reason -- broken stays broken. Writes results/scores/stepN.csv and prints it.
 Harness code: used to SCORE treatments, never shown to them.
 """
-import csv, importlib, json, random, re, sys, traceback
+import csv, importlib, json, random, re, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -207,44 +208,72 @@ SCORERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5, 6: step6}
 
 
 #-- main -----------------------------------------------------
-def score(step):
-    "Score every treatment's stepN; return CSV rows."
-    rows, suite = [], splits()
-    for t, rep, folder in trials(step):
-        which = range(len(suite)) if rep == 0 else [rep - 1]
-        try:
-            m, err = load(folder, step), None
-        except Exception:
-            m, err = None, traceback.format_exc(limit=1).strip().splitlines()[-1]
-        for i in which:
-            if i >= len(suite):
-                continue  # more repeats than splits
-            val, note = "", err or ""
-            if m:
-                random.seed(1)
-                try:
-                    val, note = SCORERS[step](m, *suite[i])
-                    val = round(val, 2)
-                except Exception as e:
-                    note = f"{type(e).__name__}: {e}"
-            rows.append(dict(treatment=t, repeat=rep, split=i + 1,
-                             score=val, note=note))
-    return rows
+LIMIT = 90  # seconds for everything on one split (stated in every prompt)
 
 
-def main(step):
-    rows = score(step)
+def job(step, folder, i, conn):
+    """Child process: load FOLDER/stepN.py fresh, score it on split I,
+    send back (score, note). Runs alone, so a slow step can be stopped."""
+    try:
+        m = load(Path(folder), step)
+        random.seed(1)
+        val, note = SCORERS[step](m, *splits()[i])
+        conn.send((round(val, 2), note))
+    except Exception as e:
+        conn.send(("", f"{type(e).__name__}: {e}"))
+    conn.close()
+
+
+def score(step, limit=LIMIT, workers=None):
+    """Score every treatment's stepN, each (treatment, repeat, split) in its
+    own process: several at once, and any still running after LIMIT seconds
+    is stopped and scores blank as 'too slow'. Returns CSV rows."""
+    import multiprocessing as mp, os, time
+    n = len(json.loads(SPLITS.read_text())["splits"])
+    todo = [(t, rep, folder, i) for t, rep, folder in trials(step)
+            for i in (range(n) if rep == 0 else [rep - 1]) if i < n]
+    workers = workers or max(1, (os.cpu_count() or 2) - 1)
+    running, done = {}, {}
+    while todo or running:
+        while todo and len(running) < workers:
+            key = todo.pop(0)
+            parent, child = mp.Pipe(False)
+            proc = mp.Process(target=job, args=(step, str(key[2]), key[3], child))
+            proc.start()
+            child.close()
+            running[key] = (proc, parent, time.time())
+        for key, (proc, parent, t0) in list(running.items()):
+            secs = round(time.time() - t0, 1)
+            if parent.poll():
+                done[key] = (*parent.recv(), secs)
+            elif not proc.is_alive():
+                done[key] = ("", "crashed without an error message", secs)
+            elif secs > limit:
+                proc.terminate()
+                done[key] = ("", f"too slow (>{limit}s)", secs)
+            else:
+                continue
+            proc.join()
+            del running[key]
+        time.sleep(0.2)
+    return [dict(treatment=t, repeat=rep, split=i + 1, score=done[(t, rep, f, i)][0],
+                 note=done[(t, rep, f, i)][1], seconds=done[(t, rep, f, i)][2])
+            for t, rep, f, i in sorted(done, key=lambda k: (int(k[0][1:]), k[1], k[3]))]
+
+
+def main(step, limit=LIMIT):
+    rows = score(step, limit)
     OUT.mkdir(parents=True, exist_ok=True)
     f = OUT / f"step{step}.csv"
     with open(f, "w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=["treatment", "repeat", "split", "score", "note"])
+        w = csv.DictWriter(fh, fieldnames=["treatment", "repeat", "split", "score", "note", "seconds"])
         w.writeheader()
         w.writerows(rows)
     for r in rows:
         print(f"{r['treatment']:>4} r{r['repeat']:02d} split{r['split']}  "
-              f"{r['score']!s:>7}  {r['note']}")
+              f"{r['score']!s:>7}  {r['seconds']:>5}s  {r['note']}")
     print(f"-> {f.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]))
+    main(int(sys.argv[1]), *(int(a) for a in sys.argv[2:3]))

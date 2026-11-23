@@ -1,56 +1,126 @@
 {
-  "_note": "One entry per step. 'asks' come from docs/requirements.md. 'api' is the function(s) the step must define so the scorer can call it. AGREE THESE WITH T7 BEFORE RUNNING.",
-  "1": {"skill": "remember",
-        "asks": ["Out of all our past batches, show me the handful that were truly exceptional.",
-                 "Give me a quick picture of a normal batch from our cellar: what each lab reading usually looks like."],
-        "api": ["remember(rows) -> list of rows: the exceptional batches, at most 5% of the data rows",
-                "summary(rows) -> dict mapping each column name to its typical value"]},
-  "2": {"skill": "guess",
-        "asks": ["Before the panel sits, estimate what score this new batch will get from its lab sheet alone.",
-                 "Group our batches into a few kinds, and tell me what score to expect from each kind."],
-        "api": ["guess(train, row) -> float: predicted Quality+ for one batch, using only the train rows",
-                "kinds(train) -> list of (group_rows, expected_quality) pairs"]},
-  "3": {"skill": "certify",
-        "asks": ["When you say batch A will beat batch B, tell me whether that's a real difference or just tasting noise.",
-                 "How often are your score estimates right on batches you've never seen before?"],
-        "api": ["certify(train, a, b) -> 'A', 'B' or 'same': which batch will score better, or 'same' if the difference is just noise",
-                "accuracy(train, test) -> float: share of test batches whose guessed score rounds to the true Quality+"]},
-  "4": {"skill": "flow",
-        "asks": ["As each new batch comes off the line, tell me right away whether it's worth sending to the panel.",
-                 "Keep sharpening your sense of what makes a good batch as this season's scores come in, without starting over."],
-        "api": ["start(names) -> model: an empty model that knows only the header row NAMES",
-                "learn(model, row) -> model: the model after seeing one more scored batch (ROW includes its goals); must not refit from scratch",
-                "predict(model, row) -> float: predicted Quality+ for one batch, from what the model has seen so far",
-                "worth(model, row) -> bool: True if this batch looks worth sending to the panel (predicted Quality+ of 6 or more)"]},
-  "5": {"skill": "choose",
-        "asks": ["The panel can only taste 20 batches this month. Which 20 should they taste to find our best wine?",
-                 "Find me a batch that scores high but stays low in alcohol, while tasting as few batches as possible."],
-        "api": ["In this step the goal cells (Alcohol-, Quality+) of every data row are '?' until tasted. label(row) -> the same batch with its goals filled in; each call is one tasting.",
-                "taste(rows, label, budget=20) -> list of labelled rows: the batches it chose to taste, in the order tasted; calls label at most BUDGET times",
-                "choose(rows, label, budget=20) -> row: the best batch found (high Quality+, low Alcohol-), tasting at most BUDGET batches"]},
-  "6": {"skill": "blame",
-        "asks": ["Our low-scoring batches: which lab readings are dragging them down?",
-                 "Which two or three readings matter most for whether a batch scores well?"],
-        "api": ["blame(train, k=3) -> list of K lab-reading column names (never a goal column): the readings that matter most for Quality+, most important first",
-                "dragging(train) -> list of (column name, 'high' or 'low') pairs: readings that are too high or too low in poor batches (Quality+ below 6), worst first"]},
-  "7": {"skill": "justify",
-        "asks": ["This batch was flagged as poor. Explain why in words my cellar staff will understand.",
-                 "If a buyer asks why we rated this batch premium, give me a short reason I can defend."],
-        "api": ["verdict(train, row) -> 'good' or 'poor': 'good' if the batch's predicted Quality+ is 6 or more",
-                "why(train, row) -> list of (column name, '<' or '>=', number) conditions: every one holds for ROW, and train batches meeting all of them mostly share ROW's verdict",
-                "explain(train, row) -> str: the verdict and its reason, in one or two plain-English sentences"]},
-  "8": {"skill": "fix",
-        "asks": ["This batch is heading for a poor score. What's the smallest change to its chemistry that would lift it?",
-                 "If we can only adjust sulphates and acidity, how should we change them to move this batch up a grade?"],
-        "api": ["fix(train, row, only=None) -> dict mapping lab-reading column names to new values: the smallest change predicted to raise ROW's Quality+; if ONLY is a list of column names, change only those (never goal columns)"]},
-  "9": {"skill": "spot",
-        "asks": ["Flag any lab sheet that looks wrong: a typo, a broken sensor, a reading that doesn't fit.",
-                 "Warn me when a batch is unlike anything we've made before, so I don't trust a prediction for it."],
-        "api": ["odd(train, row) -> bool: True if this lab sheet looks wrong (a typo, a broken sensor, a reading that doesn't fit)",
-                "novel(train, row) -> bool: True if this batch is unlike any batch in TRAIN"]},
-  "10": {"skill": "race",
-         "asks": ["Are your picks for the panel any better than just tasting batches at random?",
-                  "How does your scoring stack up against a standard off-the-shelf model?"],
-         "api": ["vs_random(rows, label, budget=20) -> 'better', 'same' or 'worse': are this trial's choose() picks better than BUDGET random tastings? Run both several times and decide with a statistical test, not a single comparison.",
-                 "vs_baseline(train, test) -> 'better', 'same' or 'worse': is this trial's guess() more accurate on TEST than always predicting the mean Quality+ of TRAIN? Decide with a statistical test on the per-batch errors."]}
+  "_note": "One entry per step. 'asks' come from docs/requirements.md. 'api' is the function(s) the step must define so the scorer can call it. AGREE THESE WITH T7 BEFORE RUNNING. 'calls' is the scorer's workload for one split; everything for one split must finish within 90 seconds.",
+  "1": {
+    "skill": "remember",
+    "asks": [
+      "Out of all our past batches, show me the handful that were truly exceptional.",
+      "Give me a quick picture of a normal batch from our cellar: what each lab reading usually looks like."
+    ],
+    "api": [
+      "remember(rows) -> list of rows: the exceptional batches, at most 5% of the data rows",
+      "summary(rows) -> dict mapping each column name to its typical value"
+    ],
+    "calls": "remember and summary are each called once per split, on 320 rows."
+  },
+  "2": {
+    "skill": "guess",
+    "asks": [
+      "Before the panel sits, estimate what score this new batch will get from its lab sheet alone.",
+      "Group our batches into a few kinds, and tell me what score to expect from each kind."
+    ],
+    "api": [
+      "guess(train, row) -> float: predicted Quality+ for one batch, using only the train rows",
+      "kinds(train) -> list of (group_rows, expected_quality) pairs"
+    ],
+    "calls": "guess is called once per test batch (320 times) with the same train rows; kinds is called once."
+  },
+  "3": {
+    "skill": "certify",
+    "asks": [
+      "When you say batch A will beat batch B, tell me whether that's a real difference or just tasting noise.",
+      "How often are your score estimates right on batches you've never seen before?"
+    ],
+    "api": [
+      "certify(train, a, b) -> 'A', 'B' or 'same': which batch will score better, or 'same' if the difference is just noise",
+      "accuracy(train, test) -> float: share of test batches whose guessed score rounds to the true Quality+"
+    ],
+    "calls": "certify is called for 500 pairs of test batches with the same train rows; accuracy is called once on 320 test batches."
+  },
+  "4": {
+    "skill": "flow",
+    "asks": [
+      "As each new batch comes off the line, tell me right away whether it's worth sending to the panel.",
+      "Keep sharpening your sense of what makes a good batch as this season's scores come in, without starting over."
+    ],
+    "api": [
+      "start(names) -> model: an empty model that knows only the header row NAMES",
+      "learn(model, row) -> model: the model after seeing one more scored batch (ROW includes its goals); must not refit from scratch",
+      "predict(model, row) -> float: predicted Quality+ for one batch, from what the model has seen so far",
+      "worth(model, row) -> bool: True if this batch looks worth sending to the panel (predicted Quality+ of 6 or more)"
+    ],
+    "calls": "learn is called 1279 times in a row on one model; after every 100 of those, predict is called on all 320 test batches (about 4,000 predict calls in total)."
+  },
+  "5": {
+    "skill": "choose",
+    "asks": [
+      "The panel can only taste 20 batches this month. Which 20 should they taste to find our best wine?",
+      "Find me a batch that scores high but stays low in alcohol, while tasting as few batches as possible."
+    ],
+    "api": [
+      "In this step the goal cells (Alcohol-, Quality+) of every data row are '?' until tasted. label(row) -> the same batch with its goals filled in; each call is one tasting.",
+      "taste(rows, label, budget=20) -> list of labelled rows: the batches it chose to taste, in the order tasted; calls label at most BUDGET times",
+      "choose(rows, label, budget=20) -> row: the best batch found (high Quality+, low Alcohol-), tasting at most BUDGET batches"
+    ],
+    "calls": "choose and taste are each called once, on 1279 rows."
+  },
+  "6": {
+    "skill": "blame",
+    "asks": [
+      "Our low-scoring batches: which lab readings are dragging them down?",
+      "Which two or three readings matter most for whether a batch scores well?"
+    ],
+    "api": [
+      "blame(train, k=3) -> list of K lab-reading column names (never a goal column): the readings that matter most for Quality+, most important first",
+      "dragging(train) -> list of (column name, 'high' or 'low') pairs: readings that are too high or too low in poor batches (Quality+ below 6), worst first"
+    ],
+    "calls": "blame and dragging are each called once, on 1279 train rows."
+  },
+  "7": {
+    "skill": "justify",
+    "asks": [
+      "This batch was flagged as poor. Explain why in words my cellar staff will understand.",
+      "If a buyer asks why we rated this batch premium, give me a short reason I can defend."
+    ],
+    "api": [
+      "verdict(train, row) -> 'good' or 'poor': 'good' if the batch's predicted Quality+ is 6 or more",
+      "why(train, row) -> list of (column name, '<' or '>=', number) conditions: every one holds for ROW, and train batches meeting all of them mostly share ROW's verdict",
+      "explain(train, row) -> str: the verdict and its reason, in one or two plain-English sentences"
+    ],
+    "calls": "verdict and why are each called once per test batch (320 times) with the same train rows; explain a few times."
+  },
+  "8": {
+    "skill": "fix",
+    "asks": [
+      "This batch is heading for a poor score. What's the smallest change to its chemistry that would lift it?",
+      "If we can only adjust sulphates and acidity, how should we change them to move this batch up a grade?"
+    ],
+    "api": [
+      "fix(train, row, only=None) -> dict mapping lab-reading column names to new values: the smallest change predicted to raise ROW's Quality+; if ONLY is a list of column names, change only those (never goal columns)"
+    ],
+    "calls": "fix is called once for each of about 50 poorly scoring test batches, with the same train rows."
+  },
+  "9": {
+    "skill": "spot",
+    "asks": [
+      "Flag any lab sheet that looks wrong: a typo, a broken sensor, a reading that doesn't fit.",
+      "Warn me when a batch is unlike anything we've made before, so I don't trust a prediction for it."
+    ],
+    "api": [
+      "odd(train, row) -> bool: True if this lab sheet looks wrong (a typo, a broken sensor, a reading that doesn't fit)",
+      "novel(train, row) -> bool: True if this batch is unlike any batch in TRAIN"
+    ],
+    "calls": "odd and novel are each called once per test batch (320 times) with the same train rows."
+  },
+  "10": {
+    "skill": "race",
+    "asks": [
+      "Are your picks for the panel any better than just tasting batches at random?",
+      "How does your scoring stack up against a standard off-the-shelf model?"
+    ],
+    "api": [
+      "vs_random(rows, label, budget=20) -> 'better', 'same' or 'worse': are this trial's choose() picks better than BUDGET random tastings? Run both several times and decide with a statistical test, not a single comparison.",
+      "vs_baseline(train, test) -> 'better', 'same' or 'worse': is this trial's guess() more accurate on TEST than always predicting the mean Quality+ of TRAIN? Decide with a statistical test on the per-batch errors."
+    ],
+    "calls": "vs_random and vs_baseline are each called once."
+  }
 }

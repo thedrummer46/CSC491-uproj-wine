@@ -39,7 +39,7 @@ Each demo runs with one command, from the repo root. The demos run our hand-writ
 python -m harness.score 1      # or 2, ...
 ```
 
-This scores every treatment's step N on the shared test splits, using the methods in [docs/assessment.md](docs/assessment.md), and writes the results to `results/scores/stepN.csv`.
+Each treatment and split is scored in its own process, several at a time. Anything still running after 90 seconds on one split is stopped and scores blank. This scores every treatment's step N on the shared test splits, using the methods in [docs/assessment.md](docs/assessment.md), and writes the results to `results/scores/stepN.csv`.
 
 ## Measuring new code
 
