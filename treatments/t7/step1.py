@@ -3,9 +3,9 @@ from ezr import Tbl, ydist, mids, csv, say
 
 PICK = 0.05
 
-def best(tbl):
+def best(tbl, rows=None):
 	"Return rows sorted by distance from heaven"
-	return sorted(tbl.rows, key=lambda row: ydist(tbl, row))
+	return sorted(rows or tbl.rows, key=lambda row: ydist(tbl, row))
 
 def remember(rows):
 	"Ask 1: the exceptional batches, top 5%"
