@@ -7,7 +7,7 @@ CSC491 shrinking-code project. Does a well-factored symbolic library (ezr) mean 
 - Requirements (20 winemaker asks, tagged by skill): [docs/requirements.md](docs/requirements.md)
 - How each skill is scored: [docs/assessment.md](docs/assessment.md)
 - Treatments T1–T7: [treatments/](treatments/)
-- The one test suite (20 fixed 80/20 splits, shared by every treatment): `data/splits.json`, rebuilt with `python scripts/make_splits.py`
+- The one test suite (5 fixed 80/20 splits, shared by every treatment): `data/splits.json`, rebuilt with `python scripts/make_splits.py`
 - Stats (the lecturer's `same` and `ranks`): [harness/stats.py](harness/stats.py)
 - ezr (the lecturer's library, Python version, pinned copy): [lib/ezr.py](lib/ezr.py)
 - Steps are git tags `step1` … `step10`, one skill per step.
@@ -20,11 +20,20 @@ pip install -r requirements.txt
 
 ## Demos
 
-Each demo runs with one command. They are added as each step lands.
+Each demo runs with one command, from the repo root. The demos run our hand-written T7. Swap the `7` for another treatment's number (and add `--repeat N`) to run that one instead.
 
 | Step | Skill | Command |
 |------|-------|---------|
-| —    | data + stats tests | `pytest` |
+| —    | all tests | `pytest` |
+| 1    | remember: the exceptional batches, and a normal batch | `python scripts/demo.py 7 1` |
+
+## Scoring
+
+```sh
+python -m harness.score 1
+```
+
+This scores every treatment's step 1 on the shared test splits, using the methods in [docs/assessment.md](docs/assessment.md), and writes the results to `results/scores/step1.csv`.
 
 ## Measuring new code
 

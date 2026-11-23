@@ -1,0 +1,8 @@
+treatment,repeat,split,score,note
+t5,1,1,79.42,summary ok
+t6,1,1,79.42,summary ok
+t7,0,1,79.42,summary ok
+t7,0,2,71.03,summary ok
+t7,0,3,92.59,summary ok
+t7,0,4,72.02,summary ok
+t7,0,5,70.86,summary ok
