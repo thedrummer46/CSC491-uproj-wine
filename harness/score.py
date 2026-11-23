@@ -78,7 +78,27 @@ def step1(m, train, test):
     return score, "summary ok" if ok else "summary WRONG"
 
 
-SCORERS = {1: step1}
+def blind(names, row, goal="Quality+"):
+    "ROW with its GOAL cell hidden as '?': the lab sheet alone."
+    at = names.index(goal)
+    return row[:at] + ["?"] + row[at + 1:]
+
+
+def step2(m, train, test):
+    """Mean absolute error of guess() on test batches (lower is better),
+    each passed with its Quality+ hidden. Ask 4 (kinds) is checked, not
+    scored: note says if it returns (rows, number) pairs covering train."""
+    names, at = test[0], test[0].index("Quality+")
+    score = sum(abs(float(m.guess(train, blind(names, r))) - r[at])
+                for r in test[1:]) / (len(test) - 1)
+    k = m.kinds(train)
+    ok = (isinstance(k, list) and 1 < len(k) < len(train) - 1 and
+          all(len(g) == 2 and isinstance(g[1], (int, float)) for g in k) and
+          sum(len(g[0]) for g in k) == len(train) - 1)
+    return score, "kinds ok" if ok else "kinds WRONG"
+
+
+SCORERS = {1: step1, 2: step2}
 
 
 #-- main -----------------------------------------------------

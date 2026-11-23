@@ -26,14 +26,15 @@ Each demo runs with one command, from the repo root. The demos run our hand-writ
 |------|-------|---------|
 | —    | all tests | `pytest` |
 | 1    | remember: the exceptional batches, and a normal batch | `python scripts/demo.py 7 1` |
+| 2    | guess: kinds of batch, and Quality guesses for unseen batches | `python scripts/demo.py 7 2` |
 
 ## Scoring
 
 ```sh
-python -m harness.score 1
+python -m harness.score 1      # or 2, ...
 ```
 
-This scores every treatment's step 1 on the shared test splits, using the methods in [docs/assessment.md](docs/assessment.md), and writes the results to `results/scores/step1.csv`.
+This scores every treatment's step N on the shared test splits, using the methods in [docs/assessment.md](docs/assessment.md), and writes the results to `results/scores/stepN.csv`.
 
 ## Measuring new code
 

@@ -36,6 +36,34 @@ def test_summary_names_every_column():
     assert abs(s["Quality+"] - 5.636) < 0.01
 
 
+#-- step 2: guess ---------------------------------------------
+def test_guess_beats_always_guessing_the_mean():
+    m = step(2)
+    train, test = score.splits()[0]
+    at = test[0].index("Quality+")
+    mu = sum(r[at] for r in train[1:]) / (len(train) - 1)
+    ours = sum(abs(m.guess(train, score.blind(test[0], r)) - r[at]) for r in test[1:])
+    base = sum(abs(mu - r[at]) for r in test[1:])
+    assert ours < 0.9 * base
+
+
+def test_kinds_are_a_few_groups_covering_train_best_first():
+    m = step(2)
+    train = score.splits()[0][0]
+    k = m.kinds(train)
+    assert 2 <= len(k) <= 10
+    assert sum(len(g) for g, _ in k) == len(train) - 1
+    qs = [q for _, q in k]
+    assert qs == sorted(qs, reverse=True)
+
+
+def test_kinds_leaves_ezr_settings_alone():
+    m = step(2)
+    before = score.ezr.the.Leaf
+    m.kinds(score.splits()[0][0])
+    assert score.ezr.the.Leaf == before
+
+
 def test_step1_scores_on_every_split():
     m = step(1)
     for train, test in score.splits():
