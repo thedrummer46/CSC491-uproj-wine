@@ -1,0 +1,8 @@
+treatment,repeat,split,score,note
+t5,1,1,51.28,called 390/500; accuracy 0.57
+t6,1,1,45.85,called 410/500; accuracy 0.57
+t7,0,1,48.89,called 360/500; accuracy 0.57
+t7,0,2,56.83,called 366/500; accuracy 0.57
+t7,0,3,58.96,called 346/500; accuracy 0.58
+t7,0,4,59.94,called 347/500; accuracy 0.59
+t7,0,5,60.33,called 363/500; accuracy 0.56

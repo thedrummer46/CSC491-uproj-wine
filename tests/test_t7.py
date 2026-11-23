@@ -64,6 +64,33 @@ def test_kinds_leaves_ezr_settings_alone():
     assert score.ezr.the.Leaf == before
 
 
+#-- step 3: certify -------------------------------------------
+def test_certify_answers_and_is_symmetric():
+    m = step(3)
+    train, test = score.splits()[0]
+    flip = {"A": "B", "B": "A", "same": "same"}
+    for a, b in zip(test[1:21], test[21:41]):
+        a, b = score.blind(test[0], a), score.blind(test[0], b)
+        c = m.certify(train, a, b)
+        assert c in flip and m.certify(train, b, a) == flip[c]
+        assert m.certify(train, a, a) == "same"
+
+
+def test_certify_beats_a_coin():
+    m = step(3)
+    train, test = score.splits()[0]
+    val, note = score.step3(m, train, test)
+    assert val > 45 and "WRONG" not in note  # ties make 50% hard; a coin gets ~30%
+
+
+def test_accuracy_is_a_share_better_than_always_6():
+    m = step(3)
+    train, test = score.splits()[0]
+    at = test[0].index("Quality+")
+    always6 = sum(r[at] == 6 for r in test[1:]) / (len(test) - 1)
+    assert always6 < m.accuracy(train, test) <= 1
+
+
 def test_step1_scores_on_every_split():
     m = step(1)
     for train, test in score.splits():

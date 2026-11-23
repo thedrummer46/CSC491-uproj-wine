@@ -98,7 +98,31 @@ def step2(m, train, test):
     return score, "kinds ok" if ok else "kinds WRONG"
 
 
-SCORERS = {1: step1, 2: step2}
+def step3(m, train, test, pairs=500):
+    """Of PAIRS random test pairs (Quality+ hidden), the share certify() gets
+    right among those it calls a real difference ('A' or 'B'); calling a
+    winner between two batches with equal true Quality+ counts as wrong.
+    Ask 6 (accuracy) is checked, not scored: note gives its value, which
+    must be a share in 0..1."""
+    names, at = test[0], test[0].index("Quality+")
+    rng, right, called = random.Random(1), 0, 0
+    for _ in range(pairs):
+        a, b = rng.sample(test[1:], 2)
+        c = m.certify(train, blind(names, a), blind(names, b))
+        if c not in ("A", "B", "same"):
+            raise ValueError(f"certify returned {c!r}")
+        if c != "same":
+            called += 1
+            right += (c == "A" and a[at] > b[at]) or (c == "B" and b[at] > a[at])
+    if not called:
+        raise ValueError("certify called every pair 'same'")
+    acc = float(m.accuracy(train, test))
+    ok = 0 <= acc <= 1
+    return (100 * right / called,
+            f"called {called}/{pairs}; accuracy {acc:.2f}" + ("" if ok else " WRONG"))
+
+
+SCORERS = {1: step1, 2: step2, 3: step3}
 
 
 #-- main -----------------------------------------------------

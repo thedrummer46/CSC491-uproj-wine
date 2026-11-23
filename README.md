@@ -27,6 +27,7 @@ Each demo runs with one command, from the repo root. The demos run our hand-writ
 | —    | all tests | `pytest` |
 | 1    | remember: the exceptional batches, and a normal batch | `python scripts/demo.py 7 1` |
 | 2    | guess: kinds of batch, and Quality guesses for unseen batches | `python scripts/demo.py 7 2` |
+| 3    | certify: is batch A really better than B, and how often guesses are right | `python scripts/demo.py 7 3` |
 
 ## Scoring
 
