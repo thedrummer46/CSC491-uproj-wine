@@ -1,11 +1,11 @@
 # How each skill is assessed
 
-**Status:** DRAFT. Per the lecturer, we work through each skill, ask "how would we assess this one?", and don't run any treatments until the group agrees with every method below.
+**Status:** Agreed by the group (Nov 22). Per the lecturer, we worked through each skill and asked "how would we assess this one?" before running any treatments.
 
 ## Ground rules (all skills)
 
-- **One test suite.** `data/splits.json` holds 20 fixed, seeded 80/20 splits (1279 train / 320 test). Every treatment, T1–T7, is scored on exactly these splits. Nothing re-splits.
-- **One number per split.** Each skill below yields one score per split, so each treatment gets 20 scores per skill (or fewer if the budget forces fewer repeats).
+- **One test suite.** `data/splits.json` holds 5 fixed, seeded 80/20 splits (1279 train / 320 test). Every treatment, T1–T7, is scored on exactly these splits. Nothing re-splits.
+- **One number per split.** Each skill below yields one score per split, so each treatment gets 5 scores per skill. LLM repeat *r* (T1–T6) is scored on split *r*; T7 is written once and scored on all 5.
 - **Compare only with `same`.** Treatments are ranked with `harness/stats.py` (`same`, `ranks`), the lecturer's Cliff's delta + KS test. Ties share a rank. A difference `same` can't see is not reported.
 - **Scoring sees everything.** The harness may use every true label to *score*. Treatments only see what their ask allows (for example, 20 labels for `choose`).
 - **`wins`** (from ezr) puts a batch on a −100..100 scale. 100 is the best batch in the pool and 0 is an average one, over both goals (`Quality+`, `Alcohol-`).
@@ -14,7 +14,7 @@
 
 | Step | Skill | Asks | Score per split | Better | Why this measure |
 |---|---|---|---|---|---|
-| 1 | remember | 1, 2 | Mean `wins` of the 5 test batches it calls "exceptional" | higher | Ask 1 is about finding great batches; ask 2 (summary) is checked by the test below, not scored |
+| 1 | remember | 1, 2 | Mean `wins` of every test batch `remember` returns (at most 5%, so 16 of 320) | higher | Ask 1 is about finding great batches; ask 2 (summary) is checked by the test below, not scored |
 | 2 | guess | 3, 4 | Mean absolute error of predicted `Quality` on test batches | lower | Direct; in the panel's own units (score points) |
 | 3 | certify | 5, 6 | Pairwise accuracy: on 500 random test pairs, how often "A beats B" is right, counting only pairs it calls a real difference | higher | Ask 5 is a pairwise claim; ask 6 is reported alongside it |
 | 4 | flow | 7, 8 | Feed train batches one at a time; after every 100, take MAE on test. Score = mean MAE over the curve | lower | Rewards learning fast, not just ending well |
@@ -25,12 +25,14 @@
 | 9 | spot | 17, 18 | Corrupt 5% of test batches (×10 or −1 on one reading, swapped columns). F1 of flagging them | higher | Planted anomalies give known answers |
 | 10 | race | 19, 20 | Does its verdict ("better than random / than off-the-shelf") match the harness's own `same` verdict? % correct over splits | higher | Race *is* a stats claim; check it against the lecturer's stats |
 
-Every treatment also reports **lines of new code per step** (`scripts/newcode.sh`). That's the hypothesis's main measure. The scores above check that shrinking code didn't come from skills that don't work.
+Every treatment also reports **lines of new code per step** (`scripts/newcode.py`). That's the hypothesis's main measure. The scores above check that shrinking code didn't come from skills that don't work.
 
-## Questions for the group
+## Decisions
 
-1. **remember, ask 2** (the summary) isn't scored, only checked. Is that OK, or do we want a number for it (e.g. error of the summary's means against the test set)?
-2. **blame** has no true answer. Is "the blamed readings still predict well" a fair test?
-3. **fix** stands in for a real lab with the nearest real batch. Is that acceptable, or do we restrict changes to the two readings in ask 16?
-4. **spot**: are the corruption types (×10, negative, swapped columns) the right kinds of "wrong lab sheet"?
-5. Should `same` use `eps` (Cohen) as well? ezr.py leaves it off by default; gloss6 lists all three.
+The group agreed with the suggestions above:
+
+1. **remember, ask 2** (the summary) is checked by a test, not scored.
+2. **blame** is scored by how well the 3 blamed readings alone still predict.
+3. **fix** uses the nearest real batch as a stand-in for the lab. Changes can touch any reading, except in ask 16 (sulphates and acidity only).
+4. **spot** plants three kinds of bad lab sheet: one reading ×10, a negative reading, or two readings swapped.
+5. **`same`** uses ezr.py's default: Cliff's delta + KS, with no Cohen (`eps=0`).

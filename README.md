@@ -38,10 +38,10 @@ This scores every treatment's step 1 on the shared test splits, using the method
 ## Measuring new code
 
 ```sh
-bash scripts/newcode.sh > results/newcode.csv
+python scripts/newcode.py > results/newcode.csv
 ```
 
-This prints lines added per treatment per step, taken from the git tags. That data feeds the Results histogram.
+For each `stepN` tag, this counts the lines in every treatment's `stepN.py` as it was at that tag ("cloc per tag"), averaged over repeats, along with that step's share of the treatment's code so far. That data feeds the Results histogram.
 
 ## License
 

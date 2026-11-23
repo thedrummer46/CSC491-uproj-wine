@@ -21,7 +21,7 @@ Step order: **1 remember → 2 guess → 3 certify → 4 flow → 5 choose → 6
 2. **LLM trials run outside the repo**: one fresh empty folder per trial, a one-shot call (`claude -p` or the API), memory off. A new chat window is *not* enough. Copy the output into the repo afterwards.
 3. **Every treatment is scored on `data/splits.json`.** Never re-split or regenerate it.
 4. **Budget: $100 per person, hard stop.** Use Opus 5.5, not Fable 5.2. Log every run's cost in `results/cost.csv`. If you hit the cap, stop and tell the group. Running out is itself a result we report.
-5. **No coding before the lecturer approves** [requirements.md](requirements.md), and the group agrees on [assessment.md](assessment.md).
+5. **Stick to the approved plan.** The lecturer approved [requirements.md](requirements.md), and the group agreed on [assessment.md](assessment.md) (Nov 22). Changing either means re-checking with them.
 
 ## Who does what
 
@@ -46,12 +46,16 @@ The split follows the treatments: each person runs two LLM treatments and pays f
 2. Copy the outputs to `treatments/tK/rNN/stepN.py` (repeat `NN`). **Don't hand-edit them.** If one is broken, it stays broken and gets reported.
 3. Commit: `T3-T4 stepN: <skill>`. Push.
 
-**Tagging**: when *all seven* treatments have stepN committed, one person runs:
+**Tagging**: the histogram is built from the `stepN` tags, so every step needs one. Once *all seven* treatments (every repeat) have stepN committed, one person runs:
 
 ```sh
 git tag stepN && git push --tags
 ```
 
-Then `bash scripts/newcode.sh` gives the lines-of-new-code data for the histogram.
+- **Late is fine.** A tag can go on any commit that has every treatment's `stepN.py`, even one that already has later steps. To tag an older commit: `git tag stepN <commit-id>`.
+- **Don't move a tag once it's pushed.** Teammates' copies keep the old one.
+- **Finish improving earlier steps before you tag.** Each step is measured by its own `stepN.py` at its tag, so changes to an earlier file made later don't get counted.
 
-**Repeats:** aim for 10 per treatment (full marks on Results), floor of 3. If costs run hot, drop to 3.
+Then `python scripts/newcode.py > results/newcode.csv` gives the lines-of-new-code data for the histogram.
+
+**Repeats:** 5 per LLM treatment (`r01`–`r05`). The lecturer confirmed 5 earns full credit for us. Repeat *r* is scored on split *r* of `data/splits.json`. If costs run hot, drop to 3, the floor.
