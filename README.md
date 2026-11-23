@@ -6,6 +6,7 @@ CSC491 shrinking-code project. Does a well-factored symbolic library (ezr) mean 
 
 - Requirements (20 winemaker asks, tagged by skill): [docs/requirements.md](docs/requirements.md)
 - How each skill is scored: [docs/assessment.md](docs/assessment.md)
+- Project record (decisions, fixes, measured facts, AI disclosure): [docs/findings.md](docs/findings.md)
 - Treatments T1–T7: [treatments/](treatments/)
 - The one test suite (5 fixed 80/20 splits, shared by every treatment): `data/splits.json`, rebuilt with `python scripts/make_splits.py`
 - Stats (the lecturer's `same` and `ranks`): [harness/stats.py](harness/stats.py)

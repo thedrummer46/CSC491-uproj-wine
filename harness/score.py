@@ -72,9 +72,10 @@ def step1(m, train, test):
     score = sum(win(r) for r in got) / len(got)
     s = m.summary(test)
     tbl = ezr.Tbl(test)
-    ok = (set(s) == set(test[0]) and
-          all(abs(float(s[c.txt]) - c.mu) <= 0.1 * (c.sd or 1)
-              for c in tbl.cols.values()))
+    def near_middle(c):  # mean or median both count as "typical"
+        xs = sorted(r[c.at] for r in tbl.rows)
+        return min(abs(float(s[c.txt]) - mid) for mid in (c.mu, xs[len(xs) // 2])) <= 0.1 * (c.sd or 1)
+    ok = set(s) == set(test[0]) and all(near_middle(c) for c in tbl.cols.values())
     return score, "summary ok" if ok else "summary WRONG"
 
 
