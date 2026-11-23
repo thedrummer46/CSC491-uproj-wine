@@ -143,7 +143,39 @@ def step4(m, train, test, every=100):
             f"curve {curve[0]:.2f} -> {curve[-1]:.2f}" + ("" if ok else "; worth WRONG"))
 
 
-SCORERS = {1: step1, 2: step2, 3: step3, 4: step4}
+def hide_goals(rows):
+    """[header] + rows with every goal cell '?', plus label(): the hidden
+    row -> its real row, counting each call as one tasting."""
+    names = rows[0]
+    goals = [i for i, n in enumerate(names) if n[-1] in "+-"]
+    hidden = [["?" if i in goals else v for i, v in enumerate(r)] for r in rows[1:]]
+    real = {id(h): r for h, r in zip(hidden, rows[1:])}
+    calls = [0]
+    def label(h):
+        calls[0] += 1
+        return list(real[id(h)])
+    return [names] + hidden, label, calls
+
+
+def step5(m, train, test, budget=20):
+    """`wins` (0 = average batch, 100 = the best) of the batch choose()
+    picks from the train batches, goals hidden until label()ed, at most
+    BUDGET tastings; scored on the true goals over the whole train pool.
+    Ask 13 (taste) is checked: note says if it stayed in budget."""
+    win = ezr.wins(ezr.Tbl(train))
+    rows, label, calls = hide_goals(train)
+    pick = m.choose(rows, label, budget)
+    if calls[0] > budget:
+        raise ValueError(f"choose tasted {calls[0]} batches; budget {budget}")
+    if "?" in pick:
+        raise ValueError("choose returned a batch it never tasted")
+    rows, label, calls = hide_goals(train)
+    t = m.taste(rows, label, budget)
+    ok = calls[0] <= budget and 0 < len(t) <= budget and all("?" not in r for r in t)
+    return win(pick), f"tasted {len(t)}" + ("" if ok else " WRONG")
+
+
+SCORERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5}
 
 
 #-- main -----------------------------------------------------

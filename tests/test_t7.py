@@ -125,6 +125,33 @@ def test_worth_means_predicted_6_or_more():
         assert m.worth(model, b) == (m.predict(model, b) >= 6)
 
 
+#-- step 5: choose --------------------------------------------
+def test_choose_stays_in_budget_and_returns_a_tasted_batch():
+    m = step(5)
+    train = score.splits()[0][0]
+    for budget in (20, 10):
+        rows, label, calls = score.hide_goals(train)
+        pick = m.choose(rows, label, budget)
+        assert calls[0] <= budget and "?" not in pick
+
+
+def test_taste_returns_labelled_batches_in_budget():
+    m = step(5)
+    rows, label, calls = score.hide_goals(score.splits()[0][0])
+    t = m.taste(rows, label)
+    assert calls[0] <= 20 and len(t) == 20 and all("?" not in r for r in t)
+
+
+def test_choose_beats_an_average_batch_and_restores_ezr():
+    m = step(5)
+    import random
+    for train, test in score.splits():
+        random.seed(1)
+        val, note = score.step5(m, train, test)
+        assert val > 0 and "WRONG" not in note
+    assert score.ezr.the.Start == 4
+
+
 def test_step1_scores_on_every_split():
     m = step(1)
     for train, test in score.splits():
