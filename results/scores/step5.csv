@@ -1,4 +1,6 @@
 treatment,repeat,split,score,note
+t1,1,1,70.91,tasted 20
+t2,1,1,69.28,tasted 20
 t7,0,1,100,tasted 20
 t7,0,2,77.99,tasted 20
 t7,0,3,78.82,tasted 20

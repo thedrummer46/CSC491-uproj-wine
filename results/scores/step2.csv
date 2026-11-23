@@ -1,4 +1,6 @@
 treatment,repeat,split,score,note
+t1,1,1,0.46,kinds ok
+t2,1,1,0.42,kinds ok
 t5,1,1,0.5,kinds ok
 t6,1,1,0.52,kinds ok
 t7,0,1,0.5,kinds ok

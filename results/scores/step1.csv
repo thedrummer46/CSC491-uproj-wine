@@ -1,4 +1,6 @@
 treatment,repeat,split,score,note
+t1,1,1,84.69,summary ok
+t2,1,1,69.24,summary ok
 t5,1,1,79.42,summary ok
 t6,1,1,79.42,summary ok
 t7,0,1,79.42,summary ok

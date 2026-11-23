@@ -1,4 +1,6 @@
 treatment,repeat,split,score,note
+t1,1,1,66.52,called 221/500; accuracy 0.67
+t2,1,1,66.67,called 186/500; accuracy 0.70
 t5,1,1,51.28,called 390/500; accuracy 0.57
 t6,1,1,45.85,called 410/500; accuracy 0.57
 t7,0,1,48.89,called 360/500; accuracy 0.57
