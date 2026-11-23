@@ -152,6 +152,32 @@ def test_choose_beats_an_average_batch_and_restores_ezr():
     assert score.ezr.the.Start == 4
 
 
+#-- step 6: blame ---------------------------------------------
+def test_blame_names_k_lab_readings_never_a_goal():
+    m = step(6)
+    train = score.splits()[0][0]
+    readings = {n for n in train[0] if n[-1] not in "+-"}
+    for k in (2, 3):
+        got = m.blame(train, k)
+        assert len(got) == k and len(set(got)) == k and set(got) <= readings
+
+
+def test_blamed_readings_beat_arbitrary_ones():
+    m = step(6)
+    train, test = score.splits()[0]
+    ours = score.refit(m.blame(train), train, test)
+    other = score.refit(["Residualsugar", "CL", "PH"], train, test)
+    assert ours < other
+
+
+def test_dragging_pairs_and_volatile_acidity_high():
+    m = step(6)
+    d = m.dragging(score.splits()[0][0])
+    readings = {n for n in score.wine()[0] if n[-1] not in "+-"}
+    assert d and all(n in readings and w in ("high", "low") for n, w in d)
+    assert ("Volatileacidity", "high") in d   # the vinegar taste every winemaker knows
+
+
 def test_step1_scores_on_every_split():
     m = step(1)
     for train, test in score.splits():

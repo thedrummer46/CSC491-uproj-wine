@@ -175,7 +175,34 @@ def step5(m, train, test, budget=20):
     return win(pick), f"tasted {len(t)}" + ("" if ok else " WRONG")
 
 
-SCORERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5}
+def refit(cols, train, test):
+    """A plain predictor that may only use COLS: an ezr tree on Quality+
+    alone, every other column skipped. Its mean absolute error on test."""
+    names = [n if n in cols or n == "Quality+" else n.rstrip("+-") + "X"
+             for n in train[0]]
+    tbl, at = ezr.Tbl([names] + train[1:]), names.index("Quality+")
+    node = ezr.tree(tbl, tbl.rows)
+    return sum(abs(sum(r[at] for r in ezr.leaf(node, x).rows)
+                   / len(ezr.leaf(node, x).rows) - x[at])
+               for x in test[1:]) / (len(test) - 1)
+
+
+def step6(m, train, test, k=3):
+    """Mean absolute error on test of a plain predictor refit on ONLY the K
+    readings blame() names (lower is better): good blame keeps most of the
+    predictive power. Ask 9 (dragging) is checked: note says if it returns
+    (lab reading, 'high'/'low') pairs."""
+    names = train[0]
+    readings = {n for n in names if n[-1] not in "+-!X"}
+    got = list(m.blame(train, k))
+    if len(got) != k or len(set(got)) != k or not set(got) <= readings:
+        raise ValueError(f"blame returned {got}; want {k} distinct lab readings")
+    d = m.dragging(train)
+    ok = all(len(p) == 2 and p[0] in readings and p[1] in ("high", "low") for p in d)
+    return refit(got, train, test), (", ".join(got) + ("" if ok else "; dragging WRONG"))
+
+
+SCORERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5, 6: step6}
 
 
 #-- main -----------------------------------------------------

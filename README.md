@@ -30,6 +30,7 @@ Each demo runs with one command, from the repo root. The demos run our hand-writ
 | 3    | certify: is batch A really better than B, and how often guesses are right | `python scripts/demo.py 7 3` |
 | 4    | flow: learn as batches arrive, and flag which are worth tasting | `python scripts/demo.py 7 4` |
 | 5    | choose: taste only 20 batches, pick the best (high Quality, low alcohol) | `python scripts/demo.py 7 5` |
+| 6    | blame: which readings matter most, and what's off in poor batches | `python scripts/demo.py 7 6` |
 
 ## Scoring
 
