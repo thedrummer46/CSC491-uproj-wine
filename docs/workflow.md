@@ -46,7 +46,7 @@ The split follows the treatments: each person runs two LLM treatments and pays f
 2. Copy the outputs to `treatments/tK/rNN/stepN.py` (repeat `NN`). **Don't hand-edit them.** If one is broken, it stays broken and gets reported.
 3. Commit: `T3-T4 stepN: <skill>`. Push.
 
-**Speed:** every step must finish one split within 90 seconds (stated in each prompt as `calls` in skills.json). Check your T7 step with `python -m harness.score N`: the `seconds` column shows the time per split.
+**Speed:** every step must finish one split within 90 seconds (stated in each prompt as `calls` in skills.json). Check your T7 step with `python -m harness.score N`: the `seconds` column shows CPU seconds per split. Leave room: T7's flow step uses about 56 of the 90.
 
 **Tagging**: the histogram is built from the `stepN` tags, so every step needs one. Once *all seven* treatments (every repeat) have stepN committed, one person runs:
 

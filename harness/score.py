@@ -63,14 +63,17 @@ def load(folder, step):
 
 #-- scorers: one per step, (module, train, test) -> (score, note) ----
 def step1(m, train, test):
-    """Mean `wins` of every test batch remember() returns (at most 5%).
+    """% of the batches remember() returns (at most 5%) that really are in
+    the test pool's true top 5% by `wins`. Doesn't depend on how many are
+    returned or in what order, so returning fewer can't inflate it.
     Ask 2 (summary) is checked, not scored: note says if it passed."""
     got = m.remember(test)
     cap = int(0.05 * (len(test) - 1))
     if not got or len(got) > cap:
         raise ValueError(f"remember returned {len(got)} rows; want 1..{cap}")
     win = ezr.wins(ezr.Tbl(test))
-    score = sum(win(r) for r in got) / len(got)
+    bar = sorted((win(r) for r in test[1:]), reverse=True)[cap - 1]
+    score = 100 * sum(win(r) >= bar for r in got) / len(got)
     s = m.summary(test)
     tbl = ezr.Tbl(test)
     def near_middle(c):  # mean or median both count as "typical"
@@ -208,27 +211,46 @@ SCORERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5, 6: step6}
 
 
 #-- main -----------------------------------------------------
-LIMIT = 90  # seconds for everything on one split (stated in every prompt)
+LIMIT = 90     # CPU seconds for everything on one split (stated in every prompt)
+WALL = 600     # wall-clock backstop, for code that hangs without using CPU
+THREADS = ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "NUMEXPR_NUM_THREADS", "LOKY_MAX_CPU_COUNT")
+
+
+def cpu(proc):
+    "CPU seconds used so far by PROC and anything it started."
+    import psutil
+    try:
+        p = psutil.Process(proc.pid)
+        return sum(sum(q.cpu_times()[:2]) for q in [p] + p.children(recursive=True))
+    except psutil.Error:
+        return 0.0
 
 
 def job(step, folder, i, conn):
     """Child process: load FOLDER/stepN.py fresh, score it on split I,
-    send back (score, note). Runs alone, so a slow step can be stopped."""
+    send back (score, note, CPU seconds). Runs alone, so a slow step can be
+    stopped."""
+    import time
     try:
         m = load(Path(folder), step)
         random.seed(1)
         val, note = SCORERS[step](m, *splits()[i])
-        conn.send((round(val, 2), note))
+        conn.send((round(val, 2), note, round(time.process_time(), 1)))
     except Exception as e:
-        conn.send(("", f"{type(e).__name__}: {e}"))
+        conn.send(("", f"{type(e).__name__}: {e}", round(time.process_time(), 1)))
     conn.close()
 
 
 def score(step, limit=LIMIT, workers=None):
     """Score every treatment's stepN, each (treatment, repeat, split) in its
-    own process: several at once, and any still running after LIMIT seconds
-    is stopped and scores blank as 'too slow'. Returns CSV rows."""
+    own single-threaded process, several at once. The limit is on each job's
+    own CPU time, so jobs running side by side can't push each other over it.
+    Any job past LIMIT CPU seconds (or WALL seconds of clock) is stopped and
+    scores blank as 'too slow'. Returns CSV rows."""
     import multiprocessing as mp, os, time
+    for k in THREADS:            # children inherit: one thread each, so
+        os.environ[k] = "1"      # numpy/scikit-learn don't fight for cores
     n = len(json.loads(SPLITS.read_text())["splits"])
     todo = [(t, rep, folder, i) for t, rep, folder in trials(step)
             for i in (range(n) if rep == 0 else [rep - 1]) if i < n]
@@ -241,16 +263,17 @@ def score(step, limit=LIMIT, workers=None):
             proc = mp.Process(target=job, args=(step, str(key[2]), key[3], child))
             proc.start()
             child.close()
-            running[key] = (proc, parent, time.time())
-        for key, (proc, parent, t0) in list(running.items()):
-            secs = round(time.time() - t0, 1)
+            running[key] = (proc, parent, time.time(), [0.0])
+        for key, (proc, parent, t0, used) in list(running.items()):
+            used[0] = max(used[0], cpu(proc))      # last reading before exit
+            secs = round(used[0], 1)
             if parent.poll():
-                done[key] = (*parent.recv(), secs)
+                done[key] = parent.recv()
             elif not proc.is_alive():
                 done[key] = ("", "crashed without an error message", secs)
-            elif secs > limit:
+            elif used[0] > limit or time.time() - t0 > WALL:
                 proc.terminate()
-                done[key] = ("", f"too slow (>{limit}s)", secs)
+                done[key] = ("", f"too slow (>{limit} CPU s)", secs)
             else:
                 continue
             proc.join()

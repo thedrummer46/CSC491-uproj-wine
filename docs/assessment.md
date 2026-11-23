@@ -6,7 +6,7 @@
 
 - **One test suite.** `data/splits.json` holds 5 fixed, seeded 80/20 splits (1279 train / 320 test). Every treatment, T1–T7, is scored on exactly these splits. Nothing re-splits.
 - **One number per split.** Each skill below yields one score per split, so each treatment gets 5 scores per skill. LLM repeat *r* (T1–T6) is scored on split *r*; T7 is written once and scored on all 5.
-- **Speed limit.** Each step's interface states the scorer's workload (`calls` in `scripts/skills.json`). Everything for one split must finish within **90 seconds**, or it scores blank, the same as a crash.
+- **Speed limit.** Each step's interface states the scorer's workload (`calls` in `scripts/skills.json`). Everything for one split must finish within **90 CPU seconds** (the job's own processor time, single-threaded, so jobs running side by side don't affect each other), or it scores blank, the same as a crash.
 - **Compare only with `same`.** Treatments are ranked with `harness/stats.py` (`same`, `ranks`), the lecturer's Cliff's delta + KS test. Ties share a rank. A difference `same` can't see is not reported.
 - **Scoring sees everything.** The harness may use every true label to *score*. Treatments only see what their ask allows (for example, 20 labels for `choose`).
 - **`wins`** (from ezr) puts a batch on a −100..100 scale. 100 is the best batch in the pool and 0 is an average one, over both goals (`Quality+`, `Alcohol-`).
@@ -15,7 +15,7 @@
 
 | Step | Skill | Asks | Score per split | Better | Why this measure |
 |---|---|---|---|---|---|
-| 1 | remember | 1, 2 | Mean `wins` of every test batch `remember` returns (at most 5%, so 16 of 320) | higher | Ask 1 is about finding great batches; ask 2 (summary) is checked by the test below, not scored |
+| 1 | remember | 1, 2 | % of the batches `remember` returns (at most 5%, so up to 16 of 320) that really are in the test pool's top 5% by `wins` | higher | Ask 1 is about finding great batches; ask 2 (summary) is checked by the test below, not scored |
 | 2 | guess | 3, 4 | Mean absolute error of predicted `Quality` on test batches | lower | Direct; in the panel's own units (score points) |
 | 3 | certify | 5, 6 | Pairwise accuracy: on 500 random test pairs, how often "A beats B" is right, counting only pairs it calls a real difference | higher | Ask 5 is a pairwise claim; ask 6 is reported alongside it |
 | 4 | flow | 7, 8 | Feed train batches one at a time; after every 100, take MAE on test. Score = mean MAE over the curve | lower | Rewards learning fast, not just ending well |
