@@ -83,7 +83,7 @@
     ],
     "api": [
       "verdict(train, row) -> 'good' or 'poor': 'good' if the batch's predicted Quality+ is 6 or more",
-      "why(train, row) -> list of (column name, '<' or '>=', number) conditions: every one holds for ROW, and train batches meeting all of them mostly share ROW's verdict",
+      "why(train, row) -> list of (column name, operator, number) conditions, operator one of '<', '<=', '>', '>=': every one holds for ROW, and train batches meeting all of them mostly share ROW's verdict",
       "explain(train, row) -> str: the verdict and its reason, in one or two plain-English sentences"
     ],
     "calls": "verdict and why are each called once per test batch (320 times) with the same train rows; explain a few times."
